@@ -9,7 +9,7 @@ A JSON encoder/decoder for Java.
         - true
         - false
         - null
-        - Recursive hasmaps
+        - Recursive hashmaps
         - Arrays
  
     - Array
@@ -18,7 +18,7 @@ A JSON encoder/decoder for Java.
         - true
         - false
         - null
-        - Recursive hasmaps
+        - Recursive hashmaps
         - Arrays
 
 - Implement tests
