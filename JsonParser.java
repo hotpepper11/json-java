@@ -20,7 +20,7 @@ public class JsonParser {
                 return parseArray(this.jsonString);
         
             default:
-                System.out.println("JSON String is not valid. Does you JSON have an object or an array in it?");
+                System.out.println("JSON String is not valid. Does your JSON have an object or an array in it?");
                 break;
         }
 
