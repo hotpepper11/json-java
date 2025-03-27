@@ -1,5 +1,5 @@
 # JSON Java
-A JSON encoder/decoder for Java.
+A JSON parser for Java
 
 ## TODO
 Pretty print
