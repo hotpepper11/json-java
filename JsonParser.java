@@ -1,23 +1,20 @@
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class JsonParser {
-    private String jsonString;
+    public static Object decode(String jsonString) {
+        jsonString = jsonString.trim();
 
-    public JsonParser(String jsonString) {
-        this.jsonString = jsonString.replaceAll("\\s+", "");
-    }
+        if (jsonString.length() == 0) return null;
 
-    public Object read() {
-        if (this.jsonString.length() == 0) return null;
-
-        switch (this.jsonString.charAt(0)) {
+        switch (jsonString.charAt(0)) {
             case '{':
-                return parseHashMap(this.jsonString);
+                return decodeHashMap(jsonString);
             
             case '[':
-                return parseArray(this.jsonString);
+                return decodeArray(jsonString);
         
             default:
                 System.out.println("JSON String is not valid. Does your JSON have an object or an array in it?");
@@ -27,7 +24,25 @@ public class JsonParser {
         return null;
     }
 
-    public HashMap<String, Object> parseHashMap(String jsonString) {
+    public static String encode(Object object) {
+        // TODO: How to get rid of the warning for "Unchecked cast from Object" below even though it is checked in the if statement
+        if (object instanceof HashMap) {
+            HashMap<Object, Object> hashmap = (HashMap<Object, Object>) object;
+
+            return encodeHashMap(hashmap);
+        }
+
+        // TODO: How to get rid of the warning for "Unchecked cast from Object" below even though it is checked in the if statement
+        if (object instanceof Object[] || object instanceof ArrayList) {
+            Object[] array = (Object[]) object;
+
+            return encodeArray(array);
+        }
+
+        return "This object is not of type hashmap or array.";
+    }
+
+    private static HashMap<String, Object> decodeHashMap(String jsonString) {
         HashMap<String, Object> hashMap = new HashMap<>();
 
         char[] charArray = jsonString.toCharArray();
@@ -57,7 +72,7 @@ public class JsonParser {
 
                     // End the last inner hash map
                     if (hashMapsStack == 0) {
-                        HashMap<String, Object> result = parseHashMap(jsonString.substring(startInnerHashMapIdx, i + 1));
+                        HashMap<String, Object> result = decodeHashMap(jsonString.substring(startInnerHashMapIdx, i + 1));
 
                         hashMap.put(currentKey, result);
 
@@ -78,7 +93,7 @@ public class JsonParser {
 
                     // End the last inner hash map
                     if (arraysStack == 0) {
-                        List<Object> result = parseArray(jsonString.substring(startInnerArrayIdx, i + 1));
+                        List<Object> result = decodeArray(jsonString.substring(startInnerArrayIdx, i + 1));
 
                         hashMap.put(currentKey, result);
 
@@ -90,10 +105,11 @@ public class JsonParser {
             }
 
             // Skip whitespace if the value is not currently in a string
-            if (!inString && (charArray[i] == ' ' || charArray[i] == '\n' || charArray[i] == '}')) continue;
+            // if (!inString && (charArray[i] == ' ' || charArray[i] == '\n' || charArray[i] == '}')) continue;
 
             if (inValueOrKey) {
                 currentString += charArray[i];
+
             }
 
             if (charArray[i] == '\\') {
@@ -110,6 +126,7 @@ public class JsonParser {
 
             if (charArray[i] == '"') {
                 inString = !inString;
+
                 inValueOrKey = inString;
                 if (inString) valueType = "string";
 
@@ -222,7 +239,52 @@ public class JsonParser {
         return hashMap;
     }
 
-    public List<Object> parseArray(String jsonString) {
+    private static String encodeHashMap(HashMap<Object, Object> hashmap) {
+        String output = "{";
+
+        for (Map.Entry<Object, Object> entry : hashmap.entrySet()) {
+            String key = entry.getKey().toString();
+            Object value = entry.getValue();
+
+            output += '"' + key + '"' + ':';
+
+            if (value instanceof String) {
+                output += '"' + value.toString() + '"';
+            } else {
+                if (value instanceof HashMap || value instanceof Object[] || value instanceof ArrayList) value = encode(value);
+
+                output += value.toString();
+            }
+
+            output += ',';
+        }
+
+        output = output.substring(0, output.length() - 1) + '}';
+
+        return output;
+    }
+
+    private static String encodeArray(Object[] array) {
+        String output = "[";
+
+        for (Object element : array) {
+            if (element instanceof String) {
+                output += '"' + element.toString() + '"';
+            } else {
+                if (element instanceof HashMap || element instanceof Object[] || element instanceof ArrayList) element = encode(element);
+
+                output += element.toString();
+            }
+
+            output += ',';
+        }
+
+        output = output.substring(0, output.length() - 1) + ']';
+
+        return output;
+    }
+
+    private static List<Object> decodeArray(String jsonString) {
         List<Object> result = new ArrayList<>();
 
         char[] charArray = jsonString.toCharArray();
@@ -249,7 +311,7 @@ public class JsonParser {
 
                     // End the last inner array
                     if (hashMapsStack == 0) {
-                        HashMap<String, Object> innerHashMap = parseHashMap(jsonString.substring(startInnerHashMapIdx, i + 1));
+                        HashMap<String, Object> innerHashMap = decodeHashMap(jsonString.substring(startInnerHashMapIdx, i + 1));
 
                         result.add(innerHashMap);
 
@@ -270,7 +332,7 @@ public class JsonParser {
 
                     // End the last inner array
                     if (arraysStack == 0) {
-                        List<Object> innerArray = parseArray(jsonString.substring(startInnerArrayIdx, i + 1));
+                        List<Object> innerArray = decodeArray(jsonString.substring(startInnerArrayIdx, i + 1));
 
                         result.add(innerArray);
 
@@ -429,5 +491,16 @@ public class JsonParser {
     }
 
     // main method for testing
-    public static void main(String[] args) {}
+    public static void main(String[] args) {
+        Object output = JsonParser.decode("{ \"user\": {\"id\":1, \"name\": \"Thomas Smith\", \"admin\":true } }");
+        Object json = JsonParser.encode(output);
+
+        System.out.println(json);
+
+        Object output2 = JsonParser.decode("[1, 2, 3, 4, 5, 6, \"Hi!\",true, false, null]");
+        System.out.println(output2);
+        Object json2 = JsonParser.encode(output2);
+
+        System.out.println(json2);
+    }
 }
